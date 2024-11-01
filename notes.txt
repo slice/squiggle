@@ -1,0 +1,31 @@
+-- whitespace-sensitive syntax -------------------------------------------------
+
+  my-dict =
+    key: 'value'
+    okay-yes: 1
+    nested:
+      things: 'are'
+      existing:
+        within: 'space'
+      globe: 'planet'
+    yeppers: yes
+
+-- really good pattern matching, view patterns/"projectors", checkers ----------
+
+* https://web.archive.org/web/20170728091427/http://www.earl-grey.io/doc.html#patternmatching
+* https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/view_patterns.html
+
+  read-line-stdin()\split(' ') match
+    ['move', number* dx, number! dy]
+      @x += dx ~ @y += dy
+    ['attack', entity* resolved-target]
+      ; aim and fire
+      @attack resolved-target
+    ['quit', ...]
+      gtfo! 'ok'
+    [...]
+      print 'not sure what you mean'
+
+-- key paths -------------------------------------------------------------------
+
+* "properties should also be functions"

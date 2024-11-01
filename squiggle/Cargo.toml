@@ -5,3 +5,6 @@ description = "not very good"
 authors = ["Skip Rousseau <i@ski.pe>"]
 edition = "2021"
 publish = false
+
+[dependencies]
+chumsky = "0.9.3"
