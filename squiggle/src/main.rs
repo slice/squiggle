@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use chumsky::error::Rich;
 use chumsky::prelude::*;
 
 #[derive(Debug)]
@@ -12,7 +13,10 @@ enum Expr {
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
 
-    Call(String, Vec<Expr>),
+    Call {
+        func: Box<Expr>,
+        args: Vec<Expr>,
+    },
     Let {
         name: String,
         rhs: Box<Expr>,
@@ -38,7 +42,7 @@ enum Expr {
     },
 }
 
-fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
+fn parser() -> impl Parser<char, Vec<Expr>, Error = extra::Err<Rich<char>>> {
     let sep = just('~')
         .padded()
         .ignored()
@@ -47,20 +51,44 @@ fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
     recursive(|expr| {
         let int = text::int(10)
             .map(|s: String| Expr::Num(s.parse().unwrap()))
-            .padded();
+            .padded()
+            .labelled("int");
 
         let ident = filter(|&c: &char| c == '-' || c == '_' || c.is_alphanumeric())
             .repeated()
             .at_least(1)
-            .collect::<String>();
+            .collect::<String>()
+            .labelled("identifier");
+
+        let call = choice((
+            ident
+                .clone()
+                .then_ignore(just('('))
+                .then(expr.clone().separated_by(just(',').padded()))
+                .then_ignore(just(')'))
+                .map(|(name, args)| Expr::Call {
+                    func: Box::new(Expr::Ident(name)),
+                    args,
+                }),
+            ident
+                .clone()
+                .then(expr.clone().separated_by(just(' ')).at_least(1))
+                .map(|(x, y)| Expr::Call {
+                    func: Box::new(Expr::Ident(x)),
+                    args: y,
+                }),
+        ))
+        .labelled("call");
 
         let key_value = ident
+            .clone()
             .then_ignore(just(':').padded())
             .then(expr.clone())
             .map(|(key, value)| Expr::KeyValue {
                 key,
                 value: Box::new(value),
-            });
+            })
+            .labelled("key value");
 
         let block = expr
             .clone()
@@ -68,21 +96,25 @@ fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
             .allow_trailing()
             .delimited_by(just('{'), just('}'))
             .padded()
-            .map(Expr::Block);
+            .map(Expr::Block)
+            .labelled("block");
 
         let object_literal = (key_value.padded().repeated().at_least(1))
             .delimited_by(just('{'), just('}'))
             .padded()
             .collect::<Vec<_>>()
-            .map(|key_values| Expr::ObjectLiteral { key_values });
+            .map(|key_values| Expr::ObjectLiteral { key_values })
+            .labelled("object literal");
 
         let assignment = ident
+            .clone()
             .then_ignore(just('=').padded())
             .then(expr.clone())
             .map(|(name, value)| Expr::Assign {
                 name,
                 value: Box::new(value),
-            });
+            })
+            .labelled("assignment");
 
         let atom = int.or(expr.delimited_by(just('('), just(')'))).padded();
 
@@ -91,7 +123,8 @@ fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
         let unary = op('-')
             .repeated()
             .then(atom)
-            .foldr(|_op, rhs| Expr::Neg(Box::new(rhs)));
+            .foldr(|_op, rhs| Expr::Neg(Box::new(rhs)))
+            .labelled("unary");
 
         let product = unary
             .clone()
@@ -102,7 +135,8 @@ fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
                     .then(unary)
                     .repeated(),
             )
-            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)));
+            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)))
+            .labelled("product");
 
         let sum = product
             .clone()
@@ -113,16 +147,17 @@ fn parser() -> impl Parser<char, Vec<Expr>, Error = Simple<char>> {
                     .then(product)
                     .repeated(),
             )
-            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)));
+            .foldl(|lhs, (op, rhs)| op(Box::new(lhs), Box::new(rhs)))
+            .labelled("sum");
 
         choice((
             assignment,
             block,
             object_literal,
             sum,
-            ident.map(Expr::Ident as fn(_) -> _),
+            call,
+            ident.clone().map(Expr::Ident as fn(_) -> _),
         ))
-        .padded()
     })
     .separated_by(sep)
     .allow_trailing()
@@ -176,5 +211,7 @@ fn main() {
     let src = std::fs::read_to_string(std::env::args().nth(1).unwrap()).unwrap();
     let modified_src = sprinkle_blocks(&src);
     eprintln!("{}", modified_src);
-    println!("{:?}", parser().parse(modified_src));
+
+    let result = parser().parse(modified_src);
+    println!("{:?}",);
 }

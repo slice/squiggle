@@ -7,4 +7,4 @@ edition = "2021"
 publish = false
 
 [dependencies]
-chumsky = "0.9.3"
+chumsky = "1.0.0-alpha.7"
