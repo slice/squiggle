@@ -5,9 +5,10 @@ const parser = peggy.generate(`
 {
   let indentStack = [];
   let indent = '';
+  function array(n) { return !Array.isArray(n) ? [n] : n; }
 }
 
-Program = _ @(Expression |..,Separator|) _
+Program = _ exprs:(Expression |..,Separator|) _ { return { type: 'Program', exprs }; }
 
 Expression
   = Assign
@@ -24,6 +25,7 @@ ExpressionLow
   = FunctionLiteral
   / GappedFunctionLiteral
   / ObjectLiteral
+  / String
   / Integer
   / FunctionDefinition
   / Call
@@ -47,8 +49,11 @@ IndentedBlock
   / Block
 
 Call "function call"
-  = name:Target _sp args:(Expression / IndentedObjectLiteral |1..,"," _sp|) { return { type: 'Call', name, args }; }
-  / name:Target "(" _sp args:(Expression |..,"," _sp|) _sp ")" { return { type: 'Call', name, args }; }
+  = name:Target sp args:(Expression / IndentedObjectLiteral |1.., "," _sp|) { return { type: 'Call', name, args: array(args) }; }
+  / name:Target "(" _sp args:(Expression |.., "," _sp|) _sp ")" { return { type: 'Call', name, args: array(args) }; }
+
+String "string"
+  = '\\'' text:$[^']* '\\'' { return { type: 'String', text }; }
 
 PropertyTraversal "property traversal"
   = properties:Identifier |2..,"\\\\"| { return { type: 'PropertyTraversal', properties }; }
@@ -74,7 +79,7 @@ ObjectDestructuring "object destructuring"
 Pattern "pattern"
   = ObjectDestructuring
   / "*" "?"? projector:Identifier _sp name:Identifier { return { type: 'Pattern', projector, name }; }
-  / ident:Identifier { return { type: 'Pattern', ident }; }
+  / name:Identifier { return { type: 'Pattern', projector: null, name }; }
 
 Arguments "arguments"
   = "(" _ args:Pattern |.., _ "," _| _ ")" { return args; }
@@ -112,18 +117,39 @@ _ "newlines or spaces"
   = [ \\t\\n\\r]*
 `);
 
+function exp(n) {
+  switch (n.type) {
+    case "FunctionDefinition":
+      return `function ${n.target.name}(${n.args.map(exp).join(",")}) { return ${exp(n.value)}; }`;
+    case "Pattern":
+      return exp(n.name);
+    case "Identifier":
+      return n.name;
+    case "PropertyTraversal":
+      return `(${n.properties.map(exp).join(".")})`;
+    case "Call":
+      return `${exp(n.name)}(${n.args.map(exp).join(",")})`;
+    case "Program":
+      return n.exprs.map(exp).join("\n");
+    case "String":
+      return JSON.stringify(n.text);
+  }
+}
+
+const code = `say(text) = console\\log text
+say('yo')
+`;
+
+const parsed = parser.parse(code);
+
 console.log(
-  inspect(
-    parser.parse(`xoo(yaas, werk) =
-  console\\log woo
-  console\\log 1 + 2
-  console\\table
-    coolshit: -> 1`),
-    {
-      depth: Infinity,
-      colors: true,
-      compact: true,
-      numericSeparator: true,
-    }
-  )
+  inspect(parsed, {
+    depth: Infinity,
+    colors: true,
+    compact: true,
+    numericSeparator: true,
+  })
 );
+
+const compiled = exp(parsed);
+(0, eval)(compiled);
