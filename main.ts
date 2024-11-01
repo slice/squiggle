@@ -1,4 +1,5 @@
 import peggy from "npm:peggy@latest";
+/// <reference types="npm:@types/node" />
 import { inspect } from "node:util";
 
 const parser = peggy.generate(`
