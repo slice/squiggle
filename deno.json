@@ -1,14 +1,16 @@
 {
-  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
-  "tasks": {
-    "dev": "deno run --watch main.ts"
-  },
-  "fmt": {
-    "indentWidth": 2,
-    "semiColons": true,
-    "useTabs": false
-  },
-  "imports": {
-    "@std/assert": "jsr:@std/assert@1"
-  }
+	"$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+	"tasks": {
+		"dev": "deno run -A --watch main.ts",
+		"gen": "pnpx peggy --format es --dts grammar/squiggle.pegjs -o grammar/squiggle.js"
+	},
+	"fmt": {
+		"indentWidth": 2,
+		"semiColons": true,
+		"useTabs": false
+	},
+	"imports": {
+		"@std/assert": "jsr:@std/assert@1",
+		"peggy": "npm:peggy@^4.1.1"
+	}
 }
