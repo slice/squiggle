@@ -25,6 +25,7 @@ ExpressionLow
   / GappedFunctionLiteral
   / ObjectLiteral
   / Integer
+  / FunctionDefinition
   / Call
   / Identifier
   / Block
@@ -36,17 +37,27 @@ Samedent = spaces:$([ \\t]*) &{ console.log('current',indent.length, 'has',space
 Dedent = &{ indent = indentStack.pop(); return true; }
 Indent = spaces:$([ \\t]+) &{ return spaces.length > indent.length; } { indentStack.push(indent); indent = spaces; }
 
+Target = PropertyTraversal / Identifier
+
+FunctionDefinition
+  = target:Target args:Arguments _sp "=" _sp value:(IndentedBlock / Expression) { return { type: 'FunctionDefinition', target, value, args }; }
+
+IndentedBlock
+  = "\\n" Indent exprs:(Expression |1..,Separator|) Dedent { return { type: 'IndentedBlock', exprs }; }
+  / Block
+
 Call "function call"
-  = name:(Identifier / PropertyTraversal) _sp args:(Expression |1..,"," _sp|) { return { type: 'Call', name, args }; }
+  = name:Target _sp args:(Expression / IndentedObjectLiteral |1..,"," _sp|) { return { type: 'Call', name, args }; }
+  / name:Target "(" _sp args:(Expression |..,"," _sp|) _sp ")" { return { type: 'Call', name, args }; }
 
 PropertyTraversal "property traversal"
-  = properties:Identifier |1..,"\\\\"| { return { type: 'PropertyTraversal', properties }; }
+  = properties:Identifier |2..,"\\\\"| { return { type: 'PropertyTraversal', properties }; }
 
 IndentedObjectLiteral "indented object literal"
   = "\\n" Indent kvs:(KeyValue |..,Separator|) Dedent { return { type: 'IndentedObjectLiteral', kvs }; }
 
 KeyValue "key-value pair"
-  = key:(PropertyTraversal / Identifier) _sp ":" _sp value:(IndentedObjectLiteral / Expression) { return [key, value]; }
+  = key:Target _sp ":" _sp value:(IndentedObjectLiteral / Expression) { return [key, value]; }
 
 Separator "newlines or ~"
   = "\\n" Samedent _
@@ -93,6 +104,8 @@ Integer "integer"
 
 _sp "spaces"
   = [ \\t]*
+sp "spaces"
+  = [ \\t]+
 nl "newlines"
   = [\\n\\r]+
 _ "newlines or spaces"
@@ -100,10 +113,17 @@ _ "newlines or spaces"
 `);
 
 console.log(
-  inspect(parser.parse(`xoo = -> (2-3)/4`), {
-    depth: Infinity,
-    colors: true,
-    compact: true,
-    numericSeparator: true,
-  })
+  inspect(
+    parser.parse(`xoo(yaas, werk) =
+  console\\log woo
+  console\\log 1 + 2
+  console\\table
+    coolshit: -> 1`),
+    {
+      depth: Infinity,
+      colors: true,
+      compact: true,
+      numericSeparator: true,
+    }
+  )
 );
