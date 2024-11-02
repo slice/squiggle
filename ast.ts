@@ -29,6 +29,16 @@ export type Assignment = {
   pattern: Pattern | ObjectDestructuring;
   value: Expression | IndentedObjectLiteral;
 };
+export type If = {
+  type: "If";
+  cond: Expression;
+  body: Expression | IndentedBlock;
+  else: Else | null;
+};
+export type Else = {
+  type: "Else";
+  body: Expression;
+};
 
 export type Expression =
   | { type: "Program"; exprs: Expression[] }
@@ -55,6 +65,7 @@ export type Expression =
   | String
   | Integer
   | Call
+  | If
   | Identifier
   | Block;
 

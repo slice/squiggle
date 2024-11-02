@@ -111,3 +111,61 @@ Deno.test(function assignmentWithIndentedObjectLiterals() {
     )
   );
 });
+
+const onePlusOne = {
+  type: "Addition",
+  left: n.Integer(1),
+  right: n.Integer(1),
+} as const;
+
+Deno.test(function if_() {
+  let ok = [
+    {
+      type: "If" as const,
+      cond: onePlusOne,
+      else: null,
+      body: [n.Call(ident`o`, [str`k`])],
+    },
+    n.Integer(2),
+  ];
+
+  p(
+    `if 1 + 1
+  o 'k'
+2`,
+    ok
+  );
+
+  p(
+    `if 1 + 1 ~ o 'k'
+2`,
+    ok
+  );
+});
+
+Deno.test(function else_() {
+  let ok = [
+    {
+      type: "If" as const,
+      cond: onePlusOne,
+      else: { type: "Else", body: n.Integer(5) } as const,
+      body: [n.Call(ident`o`, [])],
+    },
+    n.Integer(3),
+  ];
+
+  p(
+    `if 1 + 1 ~ o() else 5
+3`,
+    ok
+  );
+
+  p(
+    `if 1 + 1
+  o()
+else
+  5
+3`,
+    ok
+  );
+});

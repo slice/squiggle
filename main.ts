@@ -18,8 +18,17 @@ function expand(node: AST.Node): string {
     case "PropertyTraversal":
       return `(${node.properties.map(expand).join(".")})`;
     case "Block":
-    case "IndentedBlock":
-      return `(() => { ${node.exprs.map((sn, i) => (i === node.exprs.length - 1 ? "return " : "") + expand(sn)).join("\n")} })()`;
+    case "IndentedBlock": {
+      let body = node.exprs
+        .map((subNode, index) => {
+          let expr = expand(subNode);
+          if (index === node.exprs.length - 1) return `return ${expr};`;
+          return `${expr};`;
+        })
+        .join(" ");
+
+      return `(() => { ${body} })()`;
+    }
     case "Addition":
       return `(${expand(node.left)} + ${expand(node.right)})`;
     case "Call": {
@@ -38,6 +47,12 @@ function expand(node: AST.Node): string {
       return JSON.stringify(node.text);
     case "FunctionLiteral":
       return `function(${node.args.map(expand).join(",")}) { return ${expand(node.expr)}; }`;
+    case "If":
+      if (node.else) {
+        return `(${expand(node.cond)} ? ${expand(node.body)} : ${expand(node.else.body)})`;
+      } else {
+        return `(${expand(node.cond)} && ${expand(node.body)})`;
+      }
     default:
       throw new Error(`Unhandled AST node "${node.type}" :(`);
   }

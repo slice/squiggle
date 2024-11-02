@@ -24,6 +24,7 @@ ExpressionLow
   / String
   / Integer
   / FunctionDefinition
+  / If
   / Call
   // TODO: this should be `Target`. also how is being able to refer to a value
   // without doing anything else helpful? maybe it can be a call instead?
@@ -37,13 +38,21 @@ Samedent = spaces:$([ \t]*) &{ return spaces === indent; }
 Dedent = &{ indent = indentStack.pop(); return true; }
 Indent = spaces:$([ \t]+) &{ return spaces.length > indent.length; } { indentStack.push(indent); indent = spaces; }
 
+Else
+  = "else" _sp body:(Expression / IndentedBlock) { return { type: 'Else', body }; }
+
+If
+  // multiline
+  = "if" sp cond:Expression nl Indent body:(Expression |1..,nl Samedent _|) Dedent els:(nl @Else)? { return { type: 'If', cond, body: { type: 'IndentedBlock', exprs: body }, else: els ?? null }; }
+  / "if" sp cond:Expression Collapser body:Expression els:(_ @Else)? { return { type: 'If', cond, body: body, else: els ?? null } }
+
 Target = PropertyTraversal / Identifier
 
 FunctionDefinition
   = target:Target args:Arguments _sp "=" _sp value:(IndentedBlock / Expression) { return { type: 'FunctionDefinition', target, value, args }; }
 
 IndentedBlock
-  = "\n" Indent exprs:(Expression |1..,Separator|) Dedent { return { type: 'IndentedBlock', exprs }; }
+  = nl Indent exprs:(Expression |1..,Separator|) Dedent { return { type: 'IndentedBlock', exprs }; }
   / Block
 
 Call "function call"
@@ -65,9 +74,11 @@ KeyValue "key-value pair"
   = key:Target _sp ":" _sp value:(IndentedObjectLiteral / Expression) { return [key, value]; }
   / key:Target args:Arguments _sp ":" _sp expr:(IndentedBlock / Expression) { return [key, { type: 'FunctionLiteral', args, expr}]; }
 
+Collapser = ([ \t]* "~" _)
+
 Separator "newlines or ~"
   = "\n" Samedent _
-  / ([ \t]* "~" _)
+  / Collapser
 
 Block "block"
   = "{" _ exprs:(Expression |.., Separator|) _ "}" { return { type: 'Block', exprs }; }
