@@ -1,3 +1,3 @@
 node_modules/
-/grammar/squiggle.js
-/grammar/squiggle.d.ts
+/squiggle-grammar/squiggle.js
+/squiggle-grammar/squiggle.d.ts

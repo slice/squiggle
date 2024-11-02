@@ -1,8 +1,8 @@
-import * as squiggle from "./grammar/squiggle.js";
 /// <reference types="npm:@types/node" />
 import { inspect } from "node:util";
 
-import * as AST from "./ast.ts";
+import * as squiggle from "@squiggle/grammar";
+import * as AST from "@squiggle/ast";
 
 function expand(node: AST.Node): string {
   switch (node.type) {

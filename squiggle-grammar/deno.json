@@ -1,0 +1,11 @@
+{
+	"$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+	"name": "@squiggle/grammar",
+	"exports": "./squiggle.js",
+	"tasks": {
+		"gen": "pnpx peggy --format es --dts squiggle.pegjs -o squiggle.js"
+	},
+	"imports": {
+		"peggy": "npm:peggy@^4.1.1"
+	}
+}
