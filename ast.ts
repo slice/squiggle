@@ -35,6 +35,10 @@ export type If = {
   body: Expression | IndentedBlock;
   else: Else | null;
 };
+export type Boolean = {
+  type: "Boolean";
+  value: boolean;
+};
 export type Else = {
   type: "Else";
   body: Expression;
@@ -64,8 +68,9 @@ export type Expression =
     }
   | String
   | Integer
-  | Call
+  | Boolean
   | If
+  | Call
   | Identifier
   | Block;
 

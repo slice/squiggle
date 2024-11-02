@@ -29,6 +29,8 @@ function expand(node: AST.Node): string {
 
       return `(() => { ${body} })()`;
     }
+    case "Boolean":
+      return node.value.toString();
     case "Addition":
     case "Subtraction":
     case "Multiplication":
