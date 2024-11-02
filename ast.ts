@@ -15,17 +15,28 @@ export type PropertyTraversal = {
 export type KeyValue = [key: Target, value: IndentedObjectLiteral | Expression];
 export type Target = PropertyTraversal | Identifier;
 export type Block = { type: "Block"; exprs: Expression[] };
+
+export type Call = {
+  type: "Call";
+  name: Target;
+  args: Expression[] | [IndentedObjectLiteral];
+};
+
+export type Integer = { type: "Integer"; value: number };
+export type String = { type: "String"; text: string };
+export type Assignment = {
+  type: "Assignment";
+  pattern: Pattern | ObjectDestructuring;
+  value: Expression | IndentedObjectLiteral;
+};
+
 export type Expression =
   | { type: "Program"; exprs: Expression[] }
   | { type: "Addition"; left: Expression; right: Expression }
   | { type: "Subtraction"; left: Expression; right: Expression }
   | { type: "Multiplication"; left: Expression; right: Expression }
   | { type: "Division"; left: Expression; right: Expression }
-  | {
-      type: "Assignment";
-      pattern: Pattern | ObjectDestructuring;
-      value: Expression;
-    }
+  | Assignment
   | {
       type: "FunctionLiteral";
       args: Pattern[];
@@ -41,9 +52,9 @@ export type Expression =
       value: Expression | IndentedBlock;
       args: Pattern[];
     }
-  | { type: "String"; text: string }
-  | { type: "Integer"; value: number }
-  | { type: "Call"; name: Target; args: Expression[] | IndentedObjectLiteral }
+  | String
+  | Integer
+  | Call
   | Identifier
   | Block;
 

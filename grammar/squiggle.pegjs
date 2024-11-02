@@ -48,7 +48,8 @@ IndentedBlock
 
 Call "function call"
   = name:Target string:String { return { type: 'Call', name, args: [string] }; }
-  / name:Target sp args:(IndentedObjectLiteral / (Expression |1.., ", " _sp|)) { return { type: 'Call', name, args: array(args) }; }
+  / name:Target lit:IndentedObjectLiteral { return { type: 'Call', name, args: [lit] }; }
+  / name:Target sp args:(Expression |1.., ", " _sp|) { return { type: 'Call', name, args: array(args) }; }
   / name:Target "(" _sp args:(Expression |.., "," _sp|) _sp ")" { return { type: 'Call', name, args: array(args) }; }
 
 String "string"
