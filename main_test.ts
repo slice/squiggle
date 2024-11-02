@@ -2,9 +2,13 @@ import { assertEquals, assertThrows } from "@std/assert";
 import * as squiggle from "./grammar/squiggle.js";
 import * as AST from "./ast.ts";
 
-function p(sourceCode: string, expected?: AST.Expression | AST.Expression[]) {
-  const exprs = Array.isArray(expected) ? expected : [expected];
-  assertEquals(squiggle.parse(sourceCode), { type: "Program", exprs });
+function p(
+  sourceCode: string | TemplateStringsArray,
+  expected?: AST.Expression | AST.Expression[]
+) {
+  let exprs = Array.isArray(expected) ? expected : [expected];
+  let resolvedCode = Array.isArray(sourceCode) ? sourceCode[0] : sourceCode;
+  assertEquals(squiggle.parse(resolvedCode), { type: "Program", exprs });
 }
 
 const n = {
@@ -41,6 +45,13 @@ Deno.test(function calls() {
     `hello { 1 ~ 2 }`,
     n.Call(ident`hello`, [
       { type: "Block", exprs: [n.Integer(1), n.Integer(2)] },
+    ])
+  );
+  assertThrows(() => p`hello{ a: 1 }`);
+  p(
+    `hello { a: 1 }`,
+    n.Call(ident`hello`, [
+      { type: "ObjectLiteral", kvs: [[ident`a`, n.Integer(1)]] },
     ])
   );
 });
