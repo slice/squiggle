@@ -14,7 +14,7 @@ Multiplicative
   = left:ex _sp m:[*/] _sp right:Multiplicative { return { type: m === '*' ? 'Multiplication' : 'Division', left, right }; }
   / ex
 ex
-  = '(' _sp @Expression _sp ')'
+  = Block
   / ExpressionLow
 
 ExpressionLow
@@ -29,7 +29,6 @@ ExpressionLow
   // TODO: this should be `Target`. also how is being able to refer to a value
   // without doing anything else helpful? maybe it can be a call instead?
   / Identifier
-  / Block
 
 Assignment "assignment"
   = pattern:Pattern _sp "=" _sp value:(IndentedObjectLiteral / Expression) { return { type: 'Assignment', pattern, value }; }
