@@ -51,7 +51,7 @@ function expand(node: AST.Node): string {
       if (node.else) {
         return `(${expand(node.cond)} ? ${expand(node.body)} : ${expand(node.else.body)})`;
       } else {
-        return `(${expand(node.cond)} && ${expand(node.body)})`;
+        return `(${expand(node.cond)} ? ${expand(node.body)} : undefined)`;
       }
     default:
       throw new Error(`Unhandled AST node "${node.type}" :(`);
