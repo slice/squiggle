@@ -30,7 +30,17 @@ function expand(node: AST.Node): string {
       return `(() => { ${body} })()`;
     }
     case "Addition":
-      return `(${expand(node.left)} + ${expand(node.right)})`;
+    case "Subtraction":
+    case "Multiplication":
+    case "Division": {
+      const infix = {
+        Addition: "+",
+        Subtraction: "-",
+        Multiplication: "*",
+        Division: "/",
+      }[node.type];
+      return `(${expand(node.left)} ${infix} ${expand(node.right)})`;
+    }
     case "Call": {
       let args = Array.isArray(node.args)
         ? node.args.map(expand).join(",")
