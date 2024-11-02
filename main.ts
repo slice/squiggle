@@ -7,7 +7,7 @@ import * as AST from "./ast.ts";
 function expand(node: AST.Node): string {
   switch (node.type) {
     case "FunctionDefinition":
-      return `function ${node.target.name}(${node.args.map(expand).join(",")}) { return ${expand(node.value)}; }`;
+      return `function ${expand(node.target)}(${node.args.map(expand).join(",")}) { return ${expand(node.value)}; }`;
     case "Pattern":
       return expand(node.name);
     case "Identifier":
@@ -22,14 +22,18 @@ function expand(node: AST.Node): string {
       return `(() => { ${node.exprs.map((sn, i) => (i === node.exprs.length - 1 ? "return " : "") + expand(sn)).join("\n")} })()`;
     case "Addition":
       return `(${expand(node.left)} + ${expand(node.right)})`;
-    case "Call":
-      return `${expand(node.name)}(${node.args.map(expand).join(",")})`;
+    case "Call": {
+      let args = Array.isArray(node.args)
+        ? node.args.map(expand).join(",")
+        : expand(node.args);
+      return `${expand(node.name)}(${args})`;
+    }
     case "Program":
       return node.exprs.map(expand).join(";\n");
     case "Assignment":
       return `let ${expand(node.pattern)} = ${expand(node.value)};`;
     case "Integer":
-      return node.value;
+      return node.value.toString();
     case "String":
       return JSON.stringify(node.text);
     case "FunctionLiteral":
@@ -39,13 +43,13 @@ function expand(node: AST.Node): string {
   }
 }
 
-const filename = "./hi.~";
+let filename = "./hi.~";
 
 async function doit() {
   console.clear();
   console.log(`[${new Date().toLocaleString()}]`);
   try {
-    const parsed = squiggle.parse(await Deno.readTextFile(filename));
+    let parsed = squiggle.parse(await Deno.readTextFile(filename));
     console.log(
       inspect(parsed, {
         depth: Infinity,
@@ -56,7 +60,7 @@ async function doit() {
     );
 
     console.log();
-    const compiled = expand(parsed);
+    let compiled = expand(parsed);
     console.log("Compiled:", compiled);
     console.log();
     console.log("-".repeat(50));
@@ -70,6 +74,6 @@ async function doit() {
 
 await doit();
 
-for await (const _ of Deno.watchFs(filename)) {
+for await (let _ of Deno.watchFs(filename)) {
   await doit();
 }

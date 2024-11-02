@@ -9,6 +9,11 @@
 		"semiColons": true,
 		"useTabs": false
 	},
+	"lint": {
+		"rules": {
+			"exclude": ["prefer-const"]
+		}
+	},
 	"imports": {
 		"@std/assert": "jsr:@std/assert@1",
 		"peggy": "npm:peggy@^4.1.1"

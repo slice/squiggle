@@ -52,7 +52,8 @@ export type Node =
   | Pattern
   | IndentedObjectLiteral
   | IndentedBlock
-  | PropertyTraversal;
+  | PropertyTraversal
+  | ObjectDestructuring;
 
 // -- not always valid in expression position ----------------------------------
 
