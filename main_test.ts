@@ -42,7 +42,7 @@ Deno.test(function calls() {
   );
   p(`hello'yo'`, n.Call(ident`hello`, [str`yo`]));
   p(
-    `hello { 1 ~ 2 }`,
+    `hello { 1~ 2 }`,
     n.Call(ident`hello`, [
       { type: "Block", exprs: [n.Integer(1), n.Integer(2)] },
     ])
@@ -137,7 +137,7 @@ Deno.test(function if_() {
   );
 
   p(
-    `if 1 + 1 ~ o 'k'
+    `if 1 + 1~ o 'k'
 2`,
     ok
   );
@@ -155,7 +155,7 @@ Deno.test(function else_() {
   ];
 
   p(
-    `if 1 + 1 ~ o() else 5
+    `if 1 + 1~ o() else 5
 3`,
     ok
   );
