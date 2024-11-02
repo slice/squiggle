@@ -7,7 +7,7 @@
 Program = _ exprs:(Expression |..,Separator|) _ { return { type: 'Program', exprs }; }
 
 Expression
-  = Assign
+  = Assignment
   / left:Multiplicative _sp m:[+-] _sp right:Expression { return { type: m === '+' ? 'Addition' : 'Subtraction', left, right }; }
   / Multiplicative
 Multiplicative
@@ -25,10 +25,12 @@ ExpressionLow
   / Integer
   / FunctionDefinition
   / Call
+  // TODO: this should be `Target`. also how is being able to refer to a value
+  // without doing anything else helpful? maybe it can be a call instead?
   / Identifier
   / Block
 
-Assign "assignment"
+Assignment "assignment"
   = pattern:Pattern _sp "=" _sp value:(IndentedObjectLiteral / Expression) { return { type: 'Assignment', pattern, value }; }
 
 Samedent = spaces:$([ \t]*) &{ return spaces === indent; }
@@ -46,7 +48,7 @@ IndentedBlock
 
 Call "function call"
   = name:Target string:String { return { type: 'Call', name, args: [string] }; }
-  / name:Target sp args:(Expression / IndentedObjectLiteral |1.., ", " _sp|) { return { type: 'Call', name, args: array(args) }; }
+  / name:Target sp args:(IndentedObjectLiteral / (Expression |1.., ", " _sp|)) { return { type: 'Call', name, args: array(args) }; }
   / name:Target "(" _sp args:(Expression |.., "," _sp|) _sp ")" { return { type: 'Call', name, args: array(args) }; }
 
 String "string"
@@ -67,7 +69,7 @@ Separator "newlines or ~"
   / ([ \t]* "~" _)
 
 Block "block"
-  = "{" _ expressions:(Expression |.., Separator|) _ "}" { return { type: 'Block', expressions }; }
+  = "{" _ exprs:(Expression |.., Separator|) _ "}" { return { type: 'Block', exprs }; }
 
 ObjectLiteral "object literal"
   = "{" _ kvs:(KeyValue |.., Separator|) _ "}" { return { type: 'ObjectLiteral', kvs }; }

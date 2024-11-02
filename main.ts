@@ -2,38 +2,40 @@ import * as squiggle from "./grammar/squiggle.js";
 /// <reference types="npm:@types/node" />
 import { inspect } from "node:util";
 
-function exp(n) {
-  switch (n.type) {
+import * as AST from "./ast.ts";
+
+function expand(node: AST.Node): string {
+  switch (node.type) {
     case "FunctionDefinition":
-      return `function ${n.target.name}(${n.args.map(exp).join(",")}) { return ${exp(n.value)}; }`;
+      return `function ${node.target.name}(${node.args.map(expand).join(",")}) { return ${expand(node.value)}; }`;
     case "Pattern":
-      return exp(n.name);
+      return expand(node.name);
     case "Identifier":
-      return n.name.replace(/-([a-zA-Z])/g, (_, m) => m.toUpperCase());
+      return node.name.replace(/-([a-zA-Z])/g, (_, m) => m.toUpperCase());
     case "IndentedObjectLiteral":
     case "ObjectLiteral":
-      return `{ ${n.kvs.map(([key, value]) => `${exp(key)}: ${exp(value)}`)} }`;
+      return `{ ${node.kvs.map(([key, value]) => `${expand(key)}: ${expand(value)}`)} }`;
     case "PropertyTraversal":
-      return `(${n.properties.map(exp).join(".")})`;
+      return `(${node.properties.map(expand).join(".")})`;
     case "Block":
     case "IndentedBlock":
-      return `(() => { ${n.exprs.map((sn, i) => (i === n.exprs.length - 1 ? "return " : "") + exp(sn)).join("\n")} })()`;
+      return `(() => { ${node.exprs.map((sn, i) => (i === node.exprs.length - 1 ? "return " : "") + expand(sn)).join("\n")} })()`;
     case "Addition":
-      return `(${exp(n.left)} + ${exp(n.right)})`;
+      return `(${expand(node.left)} + ${expand(node.right)})`;
     case "Call":
-      return `${exp(n.name)}(${n.args.map(exp).join(",")})`;
+      return `${expand(node.name)}(${node.args.map(expand).join(",")})`;
     case "Program":
-      return n.exprs.map(exp).join(";\n");
+      return node.exprs.map(expand).join(";\n");
     case "Assignment":
-      return `let ${exp(n.pattern)} = ${exp(n.value)};`;
+      return `let ${expand(node.pattern)} = ${expand(node.value)};`;
     case "Integer":
-      return n.value;
+      return node.value;
     case "String":
-      return JSON.stringify(n.text);
+      return JSON.stringify(node.text);
     case "FunctionLiteral":
-      return `function(${n.args.map(exp).join(",")}) { return ${exp(n.expr)}; }`;
+      return `function(${node.args.map(expand).join(",")}) { return ${expand(node.expr)}; }`;
     default:
-      throw new Error(`Unhandled AST node "${n.type}" :(`);
+      throw new Error(`Unhandled AST node "${node.type}" :(`);
   }
 }
 
@@ -54,7 +56,7 @@ async function doit() {
     );
 
     console.log();
-    const compiled = exp(parsed);
+    const compiled = expand(parsed);
     console.log("Compiled:", compiled);
     console.log();
     console.log("-".repeat(50));
