@@ -8,10 +8,10 @@ Program = _ exprs:(Expression |..,Separator|) _ { return { type: 'Program', expr
 
 Expression
   = Assign
-  / left:mu _sp m:[+-] _sp right:Expression { return { type: m === '+' ? 'Addition' : 'Subtraction', left, right }; }
-  / mu
-mu
-  = left:ex _sp m:[*/] _sp right:mu { return { type: m === '*' ? 'Multiplication' : 'Division', left, right }; }
+  / left:Multiplicative _sp m:[+-] _sp right:Expression { return { type: m === '+' ? 'Addition' : 'Subtraction', left, right }; }
+  / Multiplicative
+Multiplicative
+  = left:ex _sp m:[*/] _sp right:Multiplicative { return { type: m === '*' ? 'Multiplication' : 'Division', left, right }; }
   / ex
 ex
   = '(' _sp @Expression _sp ')'
@@ -89,18 +89,6 @@ GappedFunctionLiteral "gap function literal"
 
 Identifier "identifier"
   = name:$([@-_a-zA-Z?!<>] [-_a-zA-Z0-9?!<>]*) { return { type: 'Identifier', name }; }
-
-Term
-  = head:Factor tail:(_ ("*" / "/") _ Factor)* {
-      return tail.reduce(function(result, element) {
-        if (element[1] === "*") { return result * element[3]; }
-        if (element[1] === "/") { return result / element[3]; }
-      }, head);
-    }
-
-Factor
-  = "(" _ expr:Expression _ ")" { return expr; }
-  / Integer
 
 Integer "integer"
   = _ [0-9]+ { return { type: 'Integer', value: Number.parseInt(text(), 10) }; }
